@@ -25,7 +25,7 @@ jobs:
           xml2rfc --text --out rendered/draft-divolt-smfps.txt  draft-divolt-smfps.xml
           xml2rfc --html --out rendered/draft-divolt-smfps.html draft-divolt-smfps.xml
       - name: Upload artefacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: rendered-drafts
           path: rendered/
