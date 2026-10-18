@@ -3,7 +3,7 @@
 [![License: CC BY 4.0](https://img.shields.io/badge/License-CC_BY_4.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
 [![IETF Draft](https://img.shields.io/badge/IETF-draft--divolt--smfps--00-blue.svg)](https://datatracker.ietf.org/doc/draft-divolt-smfps/)
 [![Paper: arXiv](https://img.shields.io/badge/paper-arXiv-b31b1b.svg)](https://arxiv.org/)
-[![Companion: ForwardGuard](https://img.shields.io/badge/companion-ForwardGuard-green.svg)](https://github.com/divolt-research/forwardguard)
+[![Companion: ForwardGuard](https://img.shields.io/badge/companion-ForwardGuard-green.svg)](https://github.com/divolt-security-research/forwardguard)
 
 **SMFPS** is a provider-side control baseline for the mail-forwarder configuration
 surface exposed by domain registrars, shared-hosting control panels (cPanel/WHM,
@@ -22,7 +22,7 @@ This repository holds:
 - The reference audit-event JSON Schema (`conformance/smfps-audit-event.schema.json`).
 
 The companion research paper is at [arXiv](https://arxiv.org/), the open-source
-defender-side detection tooling at [divolt-research/forwardguard](https://github.com/divolt-research/forwardguard).
+defender-side detection tooling at [divolt-security-research/forwardguard](https://github.com/divolt-security-research/forwardguard).
 
 ## Who this is for
 
@@ -38,7 +38,7 @@ to eliminate silent-forwarder findings against your service:
 
 If you don't operate such a service but you want to detect silent forwarders
 in your own domains, see
-[`divolt-research/forwardguard`](https://github.com/divolt-research/forwardguard).
+[`divolt-security-research/forwardguard`](https://github.com/divolt-security-research/forwardguard).
 
 ## Two conformance profiles
 
