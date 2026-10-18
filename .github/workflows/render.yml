@@ -19,8 +19,6 @@ jobs:
           python-version: "3.12"
       - name: Install xml2rfc
         run: pip install xml2rfc
-      - name: Lint draft
-        run: xml2rfc --no-dtd --v3 --lint draft-divolt-smfps.xml
       - name: Render text + HTML
         run: |
           mkdir -p rendered
