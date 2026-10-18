@@ -1,0 +1,20 @@
+# SMFPS conformance test credentials — EXAMPLE
+# Fill in with your provider staging credentials, do NOT commit the real file.
+
+provider: your-provider
+domain:   test.your-provider.example
+
+api:
+  base_url: https://staging.your-provider.example/api
+  key:      ${PROVIDER_API_KEY}
+  secret:   ${PROVIDER_API_SECRET}
+
+# Out-of-band channel the provider should notify (R1, R3)
+oob:
+  type:    alt_email           # or sms, webhook
+  address: alt@your-domain.example
+  imap_host:     imap.your-domain.example
+  imap_user:     alt
+  imap_password: ${ALT_IMAP_PASSWORD}
+
+canary_destination: dest-test@your-domain.example

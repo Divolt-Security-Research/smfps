@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://divoltbtc.com/schema/smfps-audit-event-v1.json",
+  "title": "SMFPS Audit Event",
+  "description": "Normative JSON Schema for the audit event produced by an SMFPS R5-conformant provider API. See Appendix A of draft-divolt-smfps-00 for the specification text.",
+  "type": "object",
+  "required": [
+    "event_id",
+    "timestamp",
+    "event_type",
+    "actor",
+    "target",
+    "transport",
+    "tamper_evidence"
+  ],
+  "properties": {
+    "event_id":   { "type": "string", "format": "uuid" },
+    "timestamp":  { "type": "string", "format": "date-time" },
+    "event_type": {
+      "enum": [
+        "forwarder_add",
+        "forwarder_modify",
+        "forwarder_remove",
+        "forwarder_acknowledge",
+        "forwarder_revoke",
+        "notification_sent"
+      ]
+    },
+    "actor": {
+      "type": "object",
+      "required": ["principal_type","principal_id","session_id","ip","user_agent"],
+      "properties": {
+        "principal_type":  { "enum": ["account_owner","reseller","api_key","support_staff"] },
+        "principal_id":    { "type": "string" },
+        "principal_chain": { "type": "array", "items": { "type": "string" } },
+        "session_id":      { "type": "string" },
+        "ip":              { "type": "string" },
+        "user_agent":      { "type": "string" }
+      }
+    },
+    "target": {
+      "type": "object",
+      "required": ["domain","mailbox","forwarder_id","destination"],
+      "properties": {
+        "domain":       { "type": "string", "format": "hostname" },
+        "mailbox":      { "type": "string", "format": "email" },
+        "forwarder_id": { "type": "string" },
+        "destination":  { "type": "string", "format": "email" }
+      }
+    },
+    "transport": {
+      "type": "object",
+      "properties": {
+        "chain_depth":        { "type": "integer", "minimum": 1 },
+        "ack_required":       { "type": "boolean" },
+        "ack_received":       { "type": "boolean" },
+        "notification_sent":  { "type": "boolean" }
+      }
+    },
+    "tamper_evidence": {
+      "type": "object",
+      "required": ["prev_hash","hash"],
+      "properties": {
+        "prev_hash": { "type": "string", "description": "Hex SHA-256 of previous event in chain (or 64 zeros for first)." },
+        "hash":      { "type": "string", "description": "Hex SHA-256 over the canonical JSON encoding of this event minus the hash field, prefixed by prev_hash." },
+        "signature": { "type": "string", "description": "Optional ECDSA-P-256 signature over `hash`, base64url-encoded." }
+      }
+    }
+  }
+}

@@ -1,0 +1,61 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# --- Virtual envs ---
+.venv/
+venv/
+ENV/
+env/
+
+# --- Linters / test caches ---
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# --- Secrets / credentials (defense in depth) ---
+.env
+.env.*
+*.env
+secrets/
+credentials/
+credentials.*
+*.credentials
+*_secret
+*_secret.*
+*.key
+*.pem
+*.p12
+*.pfx
+*.asc            # exported PGP keys
+id_rsa
+id_rsa.*
+id_ed25519
+id_ed25519.*
+service-account.json
+service_account.json
+google-credentials.json
+
+# --- SMFPS conformance runner (operator-specific) ---
+conformance/adapters.py          # provider-specific implementation, not for the repo
+conformance/*-creds.yaml         # any filled-in credentials file
+!conformance/example-creds.yaml  # keep the template
+
+# --- IETF draft renders ---
+rendered/
+*.html
+!README.md
+*.pdf                            # draft PDFs are built by CI, not committed
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/

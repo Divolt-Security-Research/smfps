@@ -1,0 +1,42 @@
+"""Provider-specific adapter template for SMFPS conformance tests.
+
+Copy this to `adapters.py` and fill in the hooks for your provider's staging
+API. The runner (`conformance/runner.py`) picks up `ADAPTERS` and dispatches
+one hook per SMFPS requirement.
+"""
+from __future__ import annotations
+
+
+def create_forwarder(target: str, credentials: dict, source: str, dest: str) -> str:
+    """POST a new forwarder; return the provider-assigned forwarder_id."""
+    raise NotImplementedError
+
+
+def delete_forwarder(target: str, credentials: dict, forwarder_id: str) -> None:
+    """DELETE the forwarder you created in create_forwarder()."""
+    raise NotImplementedError
+
+
+def poll_oob_inbox(credentials: dict, matching: str) -> dict | None:
+    """Return the latest OOB (SMS, alt-inbox, webhook) notification matching
+    `matching` (typically the forwarder source address) or None if absent."""
+    raise NotImplementedError
+
+
+class ADAPTERS:
+    """Dispatch methods for R2..R8. Each returns (ok: bool, detail: str)."""
+
+    @staticmethod
+    def test_r2(target, credentials, verbose=False): raise NotImplementedError
+    @staticmethod
+    def test_r3(target, credentials, verbose=False): raise NotImplementedError
+    @staticmethod
+    def test_r4(target, credentials, verbose=False): raise NotImplementedError
+    @staticmethod
+    def test_r5(target, credentials, verbose=False): raise NotImplementedError
+    @staticmethod
+    def test_r6(target, credentials, verbose=False): raise NotImplementedError
+    @staticmethod
+    def test_r7(target, credentials, verbose=False): raise NotImplementedError
+    @staticmethod
+    def test_r8(target, credentials, verbose=False): raise NotImplementedError

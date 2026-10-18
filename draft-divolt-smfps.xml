@@ -1,0 +1,490 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE rfc SYSTEM "rfc2629-xhtml.ent">
+<rfc xmlns:xi="http://www.w3.org/2001/XInclude"
+     ipr="trust200902"
+     docName="draft-divolt-smfps-00"
+     category="info"
+     consensus="true"
+     submissionType="independent"
+     xml:lang="en"
+     version="3">
+
+  <front>
+    <title abbrev="SMFPS">
+      Silent-Mail-Forwarding Prevention Standard (SMFPS)
+    </title>
+
+    <seriesInfo name="Internet-Draft" value="draft-divolt-smfps-00"/>
+
+    <author initials="D." surname="Divolt Research" fullname="Divolt Security Research">
+      <organization abbrev="Divolt">Divolt Security Research</organization>
+      <address>
+        <postal><street/><city>Accra</city><country>Ghana</country></postal>
+        <email>research@divoltbtc.com</email>
+        <uri>https://divoltbtc.com</uri>
+      </address>
+    </author>
+
+    <date year="2026"/>
+
+    <area>Applications and Real-Time</area>
+    <workgroup>Independent Submission (intended for mailmaint)</workgroup>
+
+    <keyword>email</keyword>
+    <keyword>forwarding</keyword>
+    <keyword>security</keyword>
+    <keyword>cPanel</keyword>
+    <keyword>registrar</keyword>
+    <keyword>audit</keyword>
+
+    <abstract>
+      <t>
+        This document specifies the Silent-Mail-Forwarding Prevention Standard
+        (SMFPS), a provider-side control baseline for the mail-forwarder
+        configuration surface exposed by domain registrars, shared-hosting
+        control panels, and other operators of RFC 5321 mail-forwarding
+        features. SMFPS defines eight normative requirements, each paired with
+        a conformance test, whose adoption eliminates the "silent-forwarder"
+        primitive — the capacity to redirect a mailbox's traffic to an
+        arbitrary external destination without notifying the mailbox owner.
+        SMFPS is complementary to RFC 7489 (DMARC) and RFC 8617 (ARC): where
+        those documents govern the authenticity of forwarded messages, SMFPS
+        governs the authorisation of the forwarding configuration itself.
+      </t>
+    </abstract>
+  </front>
+
+  <middle>
+
+    <section anchor="intro"><name>Introduction</name>
+      <t>
+        Email forwarding is a widely deployed feature in domain-registrar and
+        shared-hosting product lines, in which an administrator of a domain
+        may configure a per-mailbox or catch-all rule that redirects messages
+        delivered at that domain to an arbitrary external destination. In the
+        dominant deployments observed in the field, such a configuration can
+        be added without notifying the mailbox owner, without any proof-of-
+        ownership of the destination, and without creating an audit trail
+        visible to the account owner. The combined effect — silent, unaudited,
+        unnotified redirection of a mailbox's traffic — is referred to in the
+        companion paper <xref target="PAPER"/> as the <em>silent-forwarder
+        primitive</em>.
+      </t>
+      <t>
+        The security consequence of the primitive is disproportionate to its
+        operational simplicity. Because email is the recovery channel for
+        essentially every consumer and enterprise identity service, a silent
+        forwarder constitutes a persistent, invisible account-takeover
+        posture against every account whose recovery flow terminates at the
+        affected mailbox.
+      </t>
+      <t>
+        This document specifies an interoperable baseline of eight provider-
+        side controls, SMFPS, that, when adopted by a mail-forwarder operator,
+        eliminates the silent-forwarder primitive while preserving legitimate
+        forwarding use-cases.
+      </t>
+
+      <section anchor="requirements-notation"><name>Requirements Notation</name>
+        <t>
+          The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+          "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and
+          "OPTIONAL" in this document are to be interpreted as described in
+          BCP 14 <xref target="RFC2119"/> <xref target="RFC8174"/> when, and
+          only when, they appear in all capitals, as shown here.
+        </t>
+      </section>
+
+      <section anchor="terminology"><name>Terminology</name>
+        <dl>
+          <dt>Forwarder</dt>
+          <dd>
+            A configured rule at the provider that causes mail addressed to
+            a mailbox M at domain D to be re-sent to an address A outside the
+            delivery authority of D. The tuple (D, M, A) uniquely identifies
+            a forwarder for the purposes of this document.
+          </dd>
+          <dt>Primary mailbox</dt>
+          <dd>
+            The mailbox M whose mail is subject to a forwarder; the party whose
+            correspondence is being redirected.
+          </dd>
+          <dt>Owner of record</dt>
+          <dd>
+            The natural or legal person recorded by the provider as the
+            account holder of the registrar, hosting, or control-panel account
+            under which the forwarder is configured.
+          </dd>
+          <dt>Configuring principal</dt>
+          <dd>
+            The authenticated identity at the provider configuration plane
+            responsible for a forwarder lifecycle event. Includes the account
+            owner, reseller principals, API keys, and provider support staff.
+          </dd>
+        </dl>
+      </section>
+    </section>
+
+    <section anchor="scope"><name>Scope</name>
+      <t>
+        SMFPS applies to any operator of an RFC 5321 mail-forwarding feature
+        whose configuration surface is exposed to a configuring principal
+        distinct from, or indistinct from, the owner-of-record of the
+        affected mailboxes. This includes but is not limited to: domain-
+        registrar bundled forwarders, hosting-control-panel forwarders
+        (cPanel/WHM, Plesk, DirectAdmin, ISPConfig, and derivatives), and
+        third-party mail-gateway appliances that expose a forwarder
+        configuration surface.
+      </t>
+      <t>
+        SMFPS does <em>not</em> apply to end-user mail filtering rules
+        configured inside an authenticated web-mail session by the mailbox
+        owner themselves (e.g., Gmail or Outlook filter rules created by the
+        signed-in user). Such configuration is already subject to the
+        authentication boundary of the mail provider.
+      </t>
+    </section>
+
+    <section anchor="requirements"><name>Normative Requirements</name>
+      <t>
+        This section specifies eight normative requirements. Compliance with
+        all eight constitutes SMFPS Full Compliance. Compliance with the
+        subset {R1, R2, R3, R4} constitutes SMFPS Minimum Compliance; see
+        <xref target="profiles"/>.
+      </t>
+
+      <section anchor="r1"><name>R1 — Out-of-band Notification on Change</name>
+        <t>
+          A provider MUST deliver a notification to the owner-of-record
+          within fifteen (15) minutes of any forwarder lifecycle event (add,
+          modify, remove). The notification MUST be delivered to a destination
+          separate from the mail stream subject to the forwarder; permitted
+          channels include SMS, authenticator-application push, and an
+          alternative mailbox collected and verified at account provisioning.
+        </t>
+        <t>
+          Conformance: a signed test message is produced at the moment of the
+          change; receipt at the owner-of-record out-of-band channel is
+          verifiable from message headers or vendor delivery receipt within
+          the fifteen-minute SLA.
+        </t>
+      </section>
+
+      <section anchor="r2"><name>R2 — Destination-Ownership Proof</name>
+        <t>
+          A provider MUST require the forwarding destination to acknowledge
+          the forwarder by HTTPS fetch of a per-forwarder unique URL within
+          seven (7) days of forwarder creation, before any mail is actually
+          forwarded. The URL MUST have at least 128 bits of entropy and MUST
+          expire on first successful fetch or on expiry of the seven-day
+          window, whichever is sooner.
+        </t>
+        <t>
+          Conformance: the first message directed to a newly-configured
+          forwarder is held or dropped unless the acknowledgement URL has
+          been fetched; the audit log (R4) records the acknowledgement event.
+        </t>
+      </section>
+
+      <section anchor="r3"><name>R3 — Confirmation to the Primary Mailbox</name>
+        <t>
+          In addition to R1, a provider MUST send a confirmation message to
+          the primary mailbox summarising the change and offering a one-click
+          revocation URL. The revocation URL MUST remain valid for at least
+          thirty (30) days after the configuration event. The confirmation
+          MUST be delivered no later than the first forwarded message.
+        </t>
+        <t>
+          Conformance: the primary mailbox receives, no later than its first
+          forwarded message, a message that unambiguously identifies the
+          configuration change and offers a working revocation link.
+        </t>
+      </section>
+
+      <section anchor="r4"><name>R4 — Immutable, Principal-Attributed Audit Log</name>
+        <t>
+          A provider MUST maintain an append-only audit log of all forwarder
+          lifecycle events. Each entry MUST attribute the event to the
+          configuring principal, MUST include the originating IP address,
+          user-agent, and session identifier, and MUST NOT be mutable from
+          the account owner's user interface.
+        </t>
+        <t>
+          Conformance: a sequence of forwarder lifecycle events is reflected
+          in the log in order; an attempted deletion of an entry via the
+          account-owner UI is rejected; a provider-side tamper of an entry is
+          detectable by the mechanism of R5 (hash-chain or signature).
+        </t>
+      </section>
+
+      <section anchor="r5"><name>R5 — Audit Log API and Schema</name>
+        <t>
+          A provider MUST expose the audit log of R4 through an authenticated
+          HTTPS JSON API endpoint queryable by the account owner. The response
+          format MUST conform to the SMFPS Audit Event schema specified in
+          <xref target="appendix-a"/>. Events MUST carry tamper-evidence in
+          the form of a hash chain or a signature, as specified in Section
+          <xref target="appendix-a" format="counter"/>.6 of the schema.
+        </t>
+        <t>
+          Conformance: a provided test harness enumerates events across a
+          time window; responses validate against the schema; a tampered
+          entry is detected by chain verification.
+        </t>
+      </section>
+
+      <section anchor="r6"><name>R6 — Per-Domain Forwarder Ceiling</name>
+        <t>
+          A provider MUST enforce a configurable, published upper bound on
+          the number of forwarders a single domain may host. The default
+          ceiling MUST NOT exceed ten (10) times the number of mailboxes at
+          the domain. Attempts to exceed the ceiling MUST be rejected with
+          an HTTP 429-equivalent response AND MUST generate the notifications
+          required by R1 and R3.
+        </t>
+        <t>
+          Conformance: a configuration attempt that would create the (N+1)th
+          forwarder, where N is the current ceiling, is rejected; a
+          notification is dispatched; an audit entry is written.
+        </t>
+      </section>
+
+      <section anchor="r7"><name>R7 — Loop and Chain Detection</name>
+        <t>
+          A provider MUST detect, at the configuration-apply step, a
+          configuration that would introduce a mail-forwarder loop
+          (A → B → A) or a chain of depth greater than three (A → B → C → D),
+          and MUST refuse to apply such configuration. The account owner MAY
+          explicitly request a higher chain-depth limit through an interactive
+          confirmation flow.
+        </t>
+        <t>
+          Conformance: a test suite that attempts to configure a two-hop,
+          three-hop, four-hop, and loop configuration is rejected or
+          respectively accepted per the above.
+        </t>
+      </section>
+
+      <section anchor="r8"><name>R8 — Reseller Attribution</name>
+        <t>
+          Where a configuration event is initiated by a reseller, sub-account,
+          or managed-services principal distinct from the owner-of-record,
+          the audit log entry MUST record the full principal chain, and the
+          notifications of R1 and R3 MUST additionally identify the reseller
+          principal responsible.
+        </t>
+        <t>
+          Conformance: a reseller-provisioned API key or sub-account
+          credential issuing a forwarder lifecycle event produces an audit
+          entry whose principal_chain field exhibits the full delegation
+          sequence; notifications identify the reseller.
+        </t>
+      </section>
+    </section>
+
+    <section anchor="profiles"><name>Deployment Profiles</name>
+      <t>
+        Two conformance profiles are defined:
+      </t>
+      <dl>
+        <dt>SMFPS Minimum Compliance</dt>
+        <dd>
+          R1, R2, R3, and R4. Appropriate for small operators (boutique
+          registrars, single-tenant hosting providers) whose operational
+          complexity does not justify the full control baseline. Minimum
+          Compliance eliminates the silent-forwarder primitive but does not
+          by itself address bulk-add, loop, or reseller-shadowing attack
+          classes.
+        </dd>
+        <dt>SMFPS Full Compliance</dt>
+        <dd>
+          All of R1–R8. Appropriate for top-ten registrars, multi-tenant
+          hosting providers at scale, and any provider offering a reseller
+          programme.
+        </dd>
+      </dl>
+    </section>
+
+    <section anchor="interactions"><name>Interactions with Other Standards</name>
+      <t>
+        SMFPS and ARC <xref target="RFC8617"/> are complementary: ARC
+        permits a receiving MTA to reason about the authentication state of
+        a message that has already been forwarded, while SMFPS constrains
+        the authorisation surface by which forwarders are created. SMFPS
+        does not supersede the sender-authentication stack SPF/DKIM/DMARC;
+        it occupies a strictly adjacent policy gap at the configuration
+        plane.
+      </t>
+      <t>
+        Providers MAY expose the audit log of R5 through the SCIM 2.0 event
+        reporting extension <xref target="RFC7643"/> to maximise reuse of
+        existing enterprise-identity tooling.
+      </t>
+    </section>
+
+    <section anchor="security"><name>Security Considerations</name>
+      <t>
+        A provider that implements SMFPS still remains subject to attack
+        classes against the configuration plane itself: credential theft of
+        the account owner (defeated by MFA, outside the scope of this
+        document), compromise of the provider's own notification path (R1
+        channel), and compromise of the audit log substrate (R4 / R5).
+        Implementers are expected to deploy MFA at account provisioning, to
+        operate the out-of-band channel of R1 on infrastructure independent
+        of the mail-forwarder plane, and to tamper-evidence the audit log
+        with cryptographic chaining as specified in <xref target="appendix-a"/>.
+      </t>
+      <t>
+        Attackers may attempt to flood the R1 and R3 notification channels
+        with legitimate configuration changes in order to desensitise the
+        account owner. The R6 ceiling and the R1 notification rate-limit
+        (not specified by this document; recommended at one notification per
+        change event with per-hour aggregation above a provider-chosen
+        threshold) mitigate this.
+      </t>
+    </section>
+
+    <section anchor="iana"><name>IANA Considerations</name>
+      <t>
+        This document requests no IANA actions in its present form. A future
+        revision may propose a registry for the "forwardguard" extension
+        field of the audit event schema in <xref target="appendix-a"/>.
+      </t>
+    </section>
+
+  </middle>
+
+  <back>
+    <references>
+      <name>Normative References</name>
+      <reference anchor="RFC2119" target="https://www.rfc-editor.org/info/rfc2119">
+        <front>
+          <title>Key words for use in RFCs to Indicate Requirement Levels</title>
+          <author initials="S." surname="Bradner" fullname="S. Bradner"/>
+          <date year="1997"/>
+        </front>
+      </reference>
+      <reference anchor="RFC8174" target="https://www.rfc-editor.org/info/rfc8174">
+        <front>
+          <title>Ambiguity of Uppercase vs Lowercase in RFC 2119 Key Words</title>
+          <author initials="B." surname="Leiba" fullname="B. Leiba"/>
+          <date year="2017"/>
+        </front>
+      </reference>
+      <reference anchor="RFC7489" target="https://www.rfc-editor.org/info/rfc7489">
+        <front>
+          <title>Domain-based Message Authentication, Reporting, and Conformance (DMARC)</title>
+          <author initials="M." surname="Kucherawy" fullname="M. Kucherawy" role="editor"/>
+          <author initials="E." surname="Zwicky" fullname="E. Zwicky" role="editor"/>
+          <date year="2015"/>
+        </front>
+      </reference>
+      <reference anchor="RFC8617" target="https://www.rfc-editor.org/info/rfc8617">
+        <front>
+          <title>The Authenticated Received Chain (ARC) Protocol</title>
+          <author initials="K." surname="Andersen" fullname="K. Andersen"/>
+          <date year="2019"/>
+        </front>
+      </reference>
+      <reference anchor="RFC7643" target="https://www.rfc-editor.org/info/rfc7643">
+        <front>
+          <title>System for Cross-domain Identity Management: Core Schema</title>
+          <author initials="P." surname="Hunt" fullname="P. Hunt" role="editor"/>
+          <date year="2015"/>
+        </front>
+      </reference>
+    </references>
+
+    <references>
+      <name>Informative References</name>
+      <reference anchor="PAPER">
+        <front>
+          <title>Silent-Forwarder: Measurement and Mitigation of Covert Email Redirection in Domain Registrars and Shared-Hosting Control Panels</title>
+          <author><organization>Divolt Security Research</organization></author>
+          <date year="2026"/>
+        </front>
+      </reference>
+      <reference anchor="FORWARDPASS">
+        <front>
+          <title>Forward Pass: On the Security Implications of Email Forwarding Mechanism and Policy</title>
+          <author initials="E." surname="Liu"/>
+          <date year="2023"/>
+        </front>
+        <seriesInfo name="EuroS&amp;P" value="2023"/>
+      </reference>
+    </references>
+
+    <section anchor="appendix-a"><name>Appendix A — SMFPS Audit Event JSON Schema</name>
+      <t>
+        The following informative JSON Schema fragment specifies the minimum
+        shape of an SMFPS R5-conformant audit event. Providers MAY extend the
+        schema with additional fields; a conforming consumer MUST ignore
+        unknown fields.
+      </t>
+      <artwork><![CDATA[
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title":   "SMFPS Audit Event",
+  "type":    "object",
+  "required": ["event_id","timestamp","event_type","actor","target","transport","tamper_evidence"],
+  "properties": {
+    "event_id":   { "type":"string", "format":"uuid" },
+    "timestamp":  { "type":"string", "format":"date-time" },
+    "event_type": { "enum": ["forwarder_add","forwarder_modify","forwarder_remove",
+                             "forwarder_acknowledge","forwarder_revoke","notification_sent"] },
+    "actor": {
+      "type":"object",
+      "required": ["principal_type","principal_id","session_id","ip","user_agent"],
+      "properties": {
+        "principal_type":  { "enum":["account_owner","reseller","api_key","support_staff"] },
+        "principal_id":    { "type":"string" },
+        "principal_chain": { "type":"array",  "items": { "type":"string" } },
+        "session_id":      { "type":"string" },
+        "ip":              { "type":"string" },
+        "user_agent":      { "type":"string" }
+      }
+    },
+    "target": {
+      "type":"object",
+      "required": ["domain","mailbox","forwarder_id","destination"],
+      "properties": {
+        "domain":       { "type":"string", "format":"hostname" },
+        "mailbox":      { "type":"string", "format":"email" },
+        "forwarder_id": { "type":"string" },
+        "destination":  { "type":"string", "format":"email" }
+      }
+    },
+    "transport": {
+      "type":"object",
+      "properties": {
+        "chain_depth":        { "type":"integer", "minimum":1 },
+        "ack_required":       { "type":"boolean" },
+        "ack_received":       { "type":"boolean" },
+        "notification_sent":  { "type":"boolean" }
+      }
+    },
+    "tamper_evidence": {
+      "type":"object",
+      "required": ["prev_hash","hash"],
+      "properties": {
+        "prev_hash": { "type":"string" },
+        "hash":      { "type":"string" },
+        "signature": { "type":"string" }
+      }
+    }
+  }
+}
+      ]]></artwork>
+    </section>
+
+    <section anchor="acknowledgements" numbered="false"><name>Acknowledgements</name>
+      <t>
+        This specification was prepared by Divolt Security Research. The
+        authors thank the maintainers of cPanel for early technical
+        conversations on the forwarder audit API design, and the three
+        registrar security teams who engaged under coordinated disclosure
+        with the companion paper.
+      </t>
+    </section>
+  </back>
+</rfc>
