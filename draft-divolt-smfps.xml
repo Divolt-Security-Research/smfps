@@ -4,7 +4,7 @@
      ipr="trust200902"
      docName="draft-divolt-smfps-00"
      category="info"
-     consensus="true"
+    
      submissionType="independent"
      xml:lang="en"
      version="3">
@@ -311,9 +311,11 @@
         permits a receiving MTA to reason about the authentication state of
         a message that has already been forwarded, while SMFPS constrains
         the authorisation surface by which forwarders are created. SMFPS
-        does not supersede the sender-authentication stack SPF/DKIM/DMARC;
-        it occupies a strictly adjacent policy gap at the configuration
-        plane.
+        does not supersede the sender-authentication stack SPF/DKIM/DMARC
+        <xref target="RFC7489"/>; it occupies a strictly adjacent policy
+        gap at the configuration plane. The research motivating this
+        specification is reported in <xref target="PAPER"/>; the closest
+        prior measurement work is <xref target="FORWARDPASS"/>.
       </t>
       <t>
         Providers MAY expose the audit log of R5 through the SCIM 2.0 event
